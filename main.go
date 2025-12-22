@@ -45,7 +45,39 @@ func main() {
 
 	// Setup HTTP server with custom mux
 	mux := http.NewServeMux()
-	mux.Handle("/mcp", streamableServer)
+	
+	// Wrap MCP handler to support GET requests with info page
+	mux.HandleFunc("/mcp", func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == http.MethodGet {
+			// Return info page for GET requests
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusOK)
+			info := map[string]interface{}{
+				"name":        serverName,
+				"version":     serverVersion,
+				"description": "MCP Server with Product Widget Tool",
+				"endpoints": map[string]string{
+					"mcp":    "/mcp (POST for MCP protocol)",
+					"health": "/health (GET for health check)",
+				},
+				"tools": []string{
+					"echo - Echoes back the input text",
+					"add - Adds two numbers together",
+					"get_time - Returns the current server time",
+					"list_products - Display an interactive product selection widget",
+				},
+				"resources": []string{
+					"server://info - Server information",
+					"widget://list-products - Product selection widget",
+				},
+				"usage": "Send POST requests with JSON-RPC 2.0 format to /mcp endpoint",
+			}
+			json.NewEncoder(w).Encode(info)
+			return
+		}
+		// For POST requests, use the MCP handler
+		streamableServer.ServeHTTP(w, r)
+	})
 	
 	// Add a health check endpoint
 	mux.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
