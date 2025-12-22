@@ -1,0 +1,87 @@
+<div id="root"></div>
+<script>
+  /**
+   * UI markup and event handlers
+   */
+  const renderProduct = (product) => {
+    return `
+      <label style="display: block; margin: 10px 0; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+        <input type="checkbox" name="cart[]" value="${product.priceId}" style="margin-right: 8px;">
+        <strong>${product.name}</strong> - $${product.price}
+      </label>
+    `;
+  };
+
+  const renderApp = (products) => {
+    const root = document.getElementById("root");
+    root.innerHTML = `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 20px auto; padding: 20px;">
+        <h1 style="color: #333;">Select products to purchase</h1>
+        <form onsubmit="handleSubmit(event)" style="margin-top: 20px;">
+          <div id="products-list">
+            ${products.map(renderProduct).join("")}
+          </div>
+          <button type="submit" style="margin-top: 20px; padding: 10px 20px; background-color: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 16px;">
+            Buy Selected Items
+          </button>
+        </form>
+        <div id="result" style="margin-top: 20px; padding: 10px; display: none;"></div>
+      </div>
+    `;
+  };
+
+  const handleSubmit = (event) => {
+    event.preventDefault();
+    const form = event.target;
+    const checkboxes = form.querySelectorAll('input[name="cart[]"]:checked');
+    const selectedProducts = Array.from(checkboxes).map(cb => cb.value);
+    
+    const resultDiv = document.getElementById("result");
+    if (selectedProducts.length > 0) {
+      resultDiv.style.display = "block";
+      resultDiv.style.backgroundColor = "#d4edda";
+      resultDiv.style.color = "#155724";
+      resultDiv.style.border = "1px solid #c3e6cb";
+      resultDiv.style.borderRadius = "4px";
+      resultDiv.innerHTML = `<strong>Success!</strong> Selected ${selectedProducts.length} product(s): ${selectedProducts.join(", ")}`;
+    } else {
+      resultDiv.style.display = "block";
+      resultDiv.style.backgroundColor = "#f8d7da";
+      resultDiv.style.color = "#721c24";
+      resultDiv.style.border = "1px solid #f5c6cb";
+      resultDiv.style.borderRadius = "4px";
+      resultDiv.innerHTML = "<strong>Error!</strong> Please select at least one product.";
+    }
+  };
+
+  /**
+   * Render the list of products from the tool's structuredContent
+   */
+  const handleSetGlobal = (event) => {
+    const toolOutput = event.detail.globals["toolOutput"];
+    if (toolOutput && toolOutput.products) {
+      renderApp(toolOutput.products);
+    }
+  };
+
+  window.addEventListener("openai:set_globals", handleSetGlobal, {
+    passive: true,
+  });
+
+  // Default products for testing if no globals are set
+  window.addEventListener("DOMContentLoaded", () => {
+    setTimeout(() => {
+      const root = document.getElementById("root");
+      if (!root.innerHTML) {
+        // Default products
+        const defaultProducts = [
+          { name: "Product A", price: "29.99", priceId: "price_001" },
+          { name: "Product B", price: "49.99", priceId: "price_002" },
+          { name: "Product C", price: "19.99", priceId: "price_003" }
+        ];
+        renderApp(defaultProducts);
+      }
+    }, 100);
+  });
+</script>
+

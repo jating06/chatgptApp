@@ -4,6 +4,13 @@ This is a Model Context Protocol (MCP) server implementation using the mark3labs
 
 > 🚀 **New to MCP?** Check out the [Quick Start Guide](QUICKSTART.md) to get up and running in minutes!
 
+## 📚 Documentation
+
+- **[Quick Start Guide](QUICKSTART.md)** - Get started in 5 minutes
+- **[API Reference](API_REFERENCE.md)** - Complete API documentation
+- **[Examples](EXAMPLES.md)** - Client examples in Go, Python, and JavaScript
+- **[Project Summary](PROJECT_SUMMARY.md)** - Overview of the entire project
+
 ## Features
 
 - **Streamable HTTP Transport**: Uses SSE (Server-Sent Events) for real-time communication
