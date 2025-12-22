@@ -189,27 +189,35 @@ func registerTools(s *server.MCPServer) {
 	)
 
 	s.AddTool(listProductsTool, func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-		// Sample product data
+		// Sample product data with real stock images and descriptions
 		products := []map[string]interface{}{
 			{
-				"name":    "Premium Widget",
-				"price":   "99.99",
-				"priceId": "price_premium_widget",
+				"name":        "Premium Widget",
+				"price":       "99.99",
+				"priceId":     "price_premium_widget",
+				"description": "Our flagship product with advanced features and premium support",
+				"image":       "https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?w=150&h=150&fit=crop",
 			},
 			{
-				"name":    "Standard Package",
-				"price":   "49.99",
-				"priceId": "price_standard_package",
+				"name":        "Standard Package",
+				"price":       "49.99",
+				"priceId":     "price_standard_package",
+				"description": "Perfect for small teams with essential features included",
+				"image":       "https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=150&h=150&fit=crop",
 			},
 			{
-				"name":    "Basic Starter",
-				"price":   "29.99",
-				"priceId": "price_basic_starter",
+				"name":        "Basic Starter",
+				"price":       "29.99",
+				"priceId":     "price_basic_starter",
+				"description": "Get started with our basic plan, ideal for individuals",
+				"image":       "https://images.unsplash.com/photo-1484480974693-6ca0a78fb36b?w=150&h=150&fit=crop",
 			},
 			{
-				"name":    "Enterprise Solution",
-				"price":   "199.99",
-				"priceId": "price_enterprise_solution",
+				"name":        "Enterprise Solution",
+				"price":       "199.99",
+				"priceId":     "price_enterprise_solution",
+				"description": "Complete enterprise solution with dedicated support and custom features",
+				"image":       "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=150&h=150&fit=crop",
 			},
 		}
 
@@ -272,11 +280,11 @@ func registerResources(s *server.MCPServer) {
 			return nil, fmt.Errorf("failed to read widget HTML: %v", err)
 		}
 
-		// Create metadata for CSP (Content Security Policy) if needed
+		// Create metadata for CSP (Content Security Policy) to allow image loading
 		metadata := map[string]interface{}{
 			"openai/widgetCSP": map[string]interface{}{
-				"connect_domains":  []string{},
-				"resource_domains": []string{},
+				"connect_domains":  []string{"https://images.unsplash.com"},
+				"resource_domains": []string{"https://images.unsplash.com"},
 			},
 		}
 

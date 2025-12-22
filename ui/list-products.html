@@ -4,30 +4,109 @@
    * UI markup and event handlers
    */
   const renderProduct = (product) => {
+    const imageUrl = product.image || `https://via.placeholder.com/150x150/4A90E2/ffffff?text=${encodeURIComponent(product.name)}`;
     return `
-      <label style="display: block; margin: 10px 0; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
-        <input type="checkbox" name="cart[]" value="${product.priceId}" style="margin-right: 8px;">
-        <strong>${product.name}</strong> - $${product.price}
-      </label>
+      <div style="display: flex; align-items: center; margin: 15px 0; padding: 15px; border: 1px solid #e0e0e0; border-radius: 8px; background: #fff; box-shadow: 0 2px 4px rgba(0,0,0,0.1); transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'">
+        <img src="${imageUrl}" alt="${product.name}" style="width: 100px; height: 100px; object-fit: cover; border-radius: 8px; margin-right: 15px;">
+        <div style="flex: 1;">
+          <h3 style="margin: 0 0 5px 0; color: #333; font-size: 18px;">${product.name}</h3>
+          <p style="margin: 0 0 10px 0; color: #666; font-size: 14px;">${product.description || 'Premium quality product'}</p>
+          <p style="margin: 0; color: #007bff; font-size: 20px; font-weight: bold;">$${product.price}</p>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 10px;">
+          <label style="display: flex; align-items: center; cursor: pointer;">
+            <input type="checkbox" name="cart[]" value="${product.priceId}" style="width: 20px; height: 20px; margin-right: 8px; cursor: pointer;">
+            <span style="font-size: 14px; color: #666;">Select</span>
+          </label>
+          <button type="button" onclick="addToCart('${product.priceId}', '${product.name}')" style="padding: 8px 16px; background-color: #28a745; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 14px; font-weight: bold; transition: background-color 0.2s;" onmouseover="this.style.backgroundColor='#218838'" onmouseout="this.style.backgroundColor='#28a745'">
+            Add to Cart
+          </button>
+        </div>
+      </div>
     `;
   };
 
   const renderApp = (products) => {
     const root = document.getElementById("root");
     root.innerHTML = `
-      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 20px auto; padding: 20px;">
-        <h1 style="color: #333;">Select products to purchase</h1>
-        <form onsubmit="handleSubmit(event)" style="margin-top: 20px;">
+      <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 800px; margin: 20px auto; padding: 20px; background: #f8f9fa; border-radius: 12px;">
+        <h1 style="color: #333; text-align: center; margin-bottom: 10px;">🛍️ Product Catalog</h1>
+        <p style="text-align: center; color: #666; margin-bottom: 30px;">Select your favorite products and add them to cart</p>
+        <form onsubmit="handleSubmit(event)">
           <div id="products-list">
             ${products.map(renderProduct).join("")}
           </div>
-          <button type="submit" style="margin-top: 20px; padding: 10px 20px; background-color: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 16px;">
-            Buy Selected Items
-          </button>
+          <div style="text-align: center; margin-top: 30px;">
+            <button type="submit" style="padding: 12px 30px; background-color: #007bff; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 16px; font-weight: bold; box-shadow: 0 4px 6px rgba(0,0,0,0.1); transition: all 0.2s;" onmouseover="this.style.backgroundColor='#0056b3'; this.style.transform='translateY(-2px)'" onmouseout="this.style.backgroundColor='#007bff'; this.style.transform='translateY(0)'">
+              🛒 Checkout Selected Items
+            </button>
+          </div>
         </form>
-        <div id="result" style="margin-top: 20px; padding: 10px; display: none;"></div>
+        <div id="result" style="margin-top: 20px; padding: 15px; display: none; border-radius: 6px;"></div>
+        <div id="cart-status" style="margin-top: 20px; padding: 15px; background: white; border-radius: 6px; display: none;">
+          <h3 style="margin: 0 0 10px 0; color: #333;">🛒 Cart Items</h3>
+          <div id="cart-items"></div>
+        </div>
       </div>
     `;
+  };
+
+  // Cart management
+  let cart = [];
+
+  const addToCart = (priceId, productName) => {
+    if (!cart.includes(priceId)) {
+      cart.push(priceId);
+      // Check the corresponding checkbox
+      const checkbox = document.querySelector(`input[value="${priceId}"]`);
+      if (checkbox) checkbox.checked = true;
+      
+      updateCartDisplay();
+      showNotification(`✅ ${productName} added to cart!`, 'success');
+    } else {
+      showNotification(`ℹ️ ${productName} is already in cart`, 'info');
+    }
+  };
+
+  const updateCartDisplay = () => {
+    const cartStatus = document.getElementById("cart-status");
+    const cartItems = document.getElementById("cart-items");
+    
+    if (cart.length > 0) {
+      cartStatus.style.display = "block";
+      cartItems.innerHTML = `
+        <p style="margin: 0; color: #666;">
+          <strong>${cart.length}</strong> item(s) in cart
+        </p>
+      `;
+    } else {
+      cartStatus.style.display = "none";
+    }
+  };
+
+  const showNotification = (message, type) => {
+    const resultDiv = document.getElementById("result");
+    resultDiv.style.display = "block";
+    
+    if (type === 'success') {
+      resultDiv.style.backgroundColor = "#d4edda";
+      resultDiv.style.color = "#155724";
+      resultDiv.style.border = "1px solid #c3e6cb";
+    } else if (type === 'info') {
+      resultDiv.style.backgroundColor = "#d1ecf1";
+      resultDiv.style.color = "#0c5460";
+      resultDiv.style.border = "1px solid #bee5eb";
+    } else {
+      resultDiv.style.backgroundColor = "#f8d7da";
+      resultDiv.style.color = "#721c24";
+      resultDiv.style.border = "1px solid #f5c6cb";
+    }
+    
+    resultDiv.innerHTML = message;
+    
+    setTimeout(() => {
+      resultDiv.style.display = "none";
+    }, 3000);
   };
 
   const handleSubmit = (event) => {
@@ -42,15 +121,21 @@
       resultDiv.style.backgroundColor = "#d4edda";
       resultDiv.style.color = "#155724";
       resultDiv.style.border = "1px solid #c3e6cb";
-      resultDiv.style.borderRadius = "4px";
-      resultDiv.innerHTML = `<strong>Success!</strong> Selected ${selectedProducts.length} product(s): ${selectedProducts.join(", ")}`;
+      resultDiv.innerHTML = `<strong>🎉 Success!</strong> Proceeding to checkout with ${selectedProducts.length} product(s)`;
+      
+      // Reset cart after checkout
+      setTimeout(() => {
+        cart = [];
+        form.reset();
+        updateCartDisplay();
+        resultDiv.style.display = "none";
+      }, 3000);
     } else {
       resultDiv.style.display = "block";
       resultDiv.style.backgroundColor = "#f8d7da";
       resultDiv.style.color = "#721c24";
       resultDiv.style.border = "1px solid #f5c6cb";
-      resultDiv.style.borderRadius = "4px";
-      resultDiv.innerHTML = "<strong>Error!</strong> Please select at least one product.";
+      resultDiv.innerHTML = "<strong>⚠️ Error!</strong> Please select at least one product.";
     }
   };
 
