@@ -65,10 +65,12 @@ func main() {
 					"add - Adds two numbers together",
 					"get_time - Returns the current server time",
 					"list_products - Display an interactive product selection widget",
+					"pizza_list - Show Pizza List - Display an interactive list of the best pizzerias",
 				},
 				"resources": []string{
 					"server://info - Server information",
 					"widget://list-products - Product selection widget",
+					"widget://pizza-list - Pizza list widget",
 				},
 				"usage": "Send POST requests with JSON-RPC 2.0 format to /mcp endpoint",
 			}
@@ -239,6 +241,97 @@ func registerTools(s *server.MCPServer) {
 
 		return mcp.NewToolResultText(message), nil
 	})
+
+	// Pizza list tool with HTML widget (inspired by OpenAI's pizzaz example)
+	pizzaListTool := mcp.NewTool("pizza_list",
+		mcp.WithDescription("Show Pizza List - Display an interactive list of the best pizzerias"),
+		mcp.WithString("pizzaTopping",
+			mcp.Description("Topping to mention when rendering the widget (e.g., pepperoni, mushrooms, cheese)"),
+		),
+	)
+
+	s.AddTool(pizzaListTool, func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+		args, ok := request.Params.Arguments.(map[string]interface{})
+		topping := "cheese" // default topping
+		if ok {
+			if t, exists := args["pizzaTopping"].(string); exists && t != "" {
+				topping = t
+			}
+		}
+
+		// Sample pizza data
+		pizzas := []map[string]interface{}{
+			{
+				"id":        "nova-slice-lab",
+				"name":      "Nova Slice Lab",
+				"city":      "North Beach",
+				"rating":    4.8,
+				"thumbnail": "https://persistent.oaistatic.com/pizzaz/pizzaz-1.png",
+			},
+			{
+				"id":        "midnight-marinara",
+				"name":      "Midnight Marinara",
+				"city":      "North Beach",
+				"rating":    4.6,
+				"thumbnail": "https://persistent.oaistatic.com/pizzaz/pizzaz-2.png",
+			},
+			{
+				"id":        "cinder-oven-co",
+				"name":      "Cinder Oven Co.",
+				"city":      "Mission",
+				"rating":    4.5,
+				"thumbnail": "https://persistent.oaistatic.com/pizzaz/pizzaz-3.png",
+			},
+			{
+				"id":        "neon-crust-works",
+				"name":      "Neon Crust Works",
+				"city":      "Alamo Square",
+				"rating":    4.5,
+				"thumbnail": "https://persistent.oaistatic.com/pizzaz/pizzaz-6.png",
+			},
+			{
+				"id":        "luna-pie-collective",
+				"name":      "Luna Pie Collective",
+				"city":      "North Beach",
+				"rating":    4.6,
+				"thumbnail": "https://persistent.oaistatic.com/pizzaz/pizzaz-4.png",
+			},
+			{
+				"id":        "bricklight-deep-dish",
+				"name":      "Bricklight Deep Dish",
+				"city":      "North Beach",
+				"rating":    4.4,
+				"thumbnail": "https://persistent.oaistatic.com/pizzaz/pizzaz-5.png",
+			},
+			{
+				"id":        "garden-ember-pies",
+				"name":      "Garden Ember Pies",
+				"city":      "Lower Haight",
+				"rating":    4.4,
+				"thumbnail": "https://persistent.oaistatic.com/pizzaz/pizzaz-1.png",
+			},
+		}
+
+		// Create structured content with pizzas data
+		pizzasJSON, err := json.Marshal(map[string]interface{}{
+			"pizzas":       pizzas,
+			"pizzaTopping": topping,
+		})
+		if err != nil {
+			return mcp.NewToolResultError(fmt.Sprintf("failed to marshal pizzas: %v", err)), nil
+		}
+
+		// Return result with reference to the widget resource
+		message := fmt.Sprintf("🍕 Rendered a pizza list with %s topping!\n\n", topping)
+		message += "National Best Pizza List:\n"
+		for i, p := range pizzas {
+			message += fmt.Sprintf("%d. %s - %s (Rating: %.1f)\n", i+1, p["name"], p["city"], p["rating"])
+		}
+		message += fmt.Sprintf("\nWidget data: %s\n", string(pizzasJSON))
+		message += "Widget resource: widget://pizza-list"
+
+		return mcp.NewToolResultText(message), nil
+	})
 }
 
 func registerResources(s *server.MCPServer) {
@@ -286,6 +379,43 @@ func registerResources(s *server.MCPServer) {
 				"connect_domains":  []string{"https://images.unsplash.com"},
 				"resource_domains": []string{"https://images.unsplash.com"},
 			},
+		}
+
+		return []mcp.ResourceContents{
+			mcp.TextResourceContents{
+				URI:      request.Params.URI,
+				MIMEType: "text/html+skybridge",
+				Text:     string(htmlContent),
+				Meta:     metadata,
+			},
+		}, nil
+	})
+
+	// Pizza list widget resource (inspired by OpenAI's pizzaz example)
+	pizzaListResource := mcp.Resource{
+		URI:         "widget://pizza-list",
+		Name:        "Pizza List Widget",
+		Description: "Interactive HTML widget displaying the best pizzerias",
+		MIMEType:    "text/html+skybridge",
+	}
+
+	s.AddResource(pizzaListResource, func(ctx context.Context, request mcp.ReadResourceRequest) ([]mcp.ResourceContents, error) {
+		// Read the HTML widget file
+		htmlContent, err := os.ReadFile("ui/pizza-list.html")
+		if err != nil {
+			return nil, fmt.Errorf("failed to read pizza widget HTML: %v", err)
+		}
+
+		// Create metadata for CSP (Content Security Policy) to allow image loading from persistent.oaistatic.com
+		metadata := map[string]interface{}{
+			"openai/widgetCSP": map[string]interface{}{
+				"connect_domains":  []string{"https://persistent.oaistatic.com"},
+				"resource_domains": []string{"https://persistent.oaistatic.com"},
+			},
+			"openai/outputTemplate":              "widget://pizza-list",
+			"openai/toolInvocation/invoking":     "Hand-tossing a list",
+			"openai/toolInvocation/invoked":      "Served a fresh list",
+			"openai/widgetAccessible":            true,
 		}
 
 		return []mcp.ResourceContents{
