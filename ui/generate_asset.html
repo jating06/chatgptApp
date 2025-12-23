@@ -1,0 +1,180 @@
+<div id="root"></div>
+<script>
+  /**
+   * Asset Generation UI - Similar to Figma integration in ChatGPT
+   */
+  
+  const renderAsset = (asset) => {
+    return `
+      <div style="margin: 15px 0; padding: 20px; border: 1px solid #e0e0e0; border-radius: 12px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+        <div style="display: flex; align-items: center; margin-bottom: 15px;">
+          <div style="width: 50px; height: 50px; background: rgba(255,255,255,0.2); border-radius: 10px; display: flex; align-items: center; justify-content: center; margin-right: 15px; font-size: 24px;">
+            ${asset.icon || '🎨'}
+          </div>
+          <div style="flex: 1;">
+            <h3 style="margin: 0 0 5px 0; font-size: 20px;">${asset.name}</h3>
+            <p style="margin: 0; opacity: 0.9; font-size: 14px;">${asset.type}</p>
+          </div>
+          <button onclick="downloadAsset('${asset.id}')" style="padding: 10px 20px; background: white; color: #667eea; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 14px; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
+            ⬇️ Download
+          </button>
+        </div>
+        <div style="background: rgba(255,255,255,0.1); padding: 15px; border-radius: 8px; margin-bottom: 15px;">
+          <p style="margin: 0 0 10px 0; font-size: 14px; opacity: 0.9;">Description:</p>
+          <p style="margin: 0; font-size: 16px;">${asset.description}</p>
+        </div>
+        ${asset.preview ? `
+          <div style="background: white; padding: 15px; border-radius: 8px; text-align: center;">
+            <img src="${asset.preview}" alt="${asset.name}" style="max-width: 100%; height: auto; border-radius: 8px;">
+          </div>
+        ` : ''}
+        <div style="margin-top: 15px; display: flex; gap: 10px; flex-wrap: wrap;">
+          ${asset.tags ? asset.tags.map(tag => `
+            <span style="padding: 5px 12px; background: rgba(255,255,255,0.2); border-radius: 20px; font-size: 12px;">${tag}</span>
+          `).join('') : ''}
+        </div>
+      </div>
+    `;
+  };
+
+  const renderApp = (data) => {
+    const root = document.getElementById("root");
+    const assets = data.assets || [];
+    
+    root.innerHTML = `
+      <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 900px; margin: 0 auto; padding: 30px; background: #f8f9fa;">
+        <div style="text-align: center; margin-bottom: 30px;">
+          <h1 style="color: #333; margin-bottom: 10px; font-size: 32px;">🎨 Asset Generator</h1>
+          <p style="color: #666; font-size: 16px;">${data.message || 'Your creative assets are ready!'}</p>
+        </div>
+        
+        <div style="background: white; padding: 25px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); margin-bottom: 20px;">
+          <h2 style="margin: 0 0 20px 0; color: #333; font-size: 24px;">📦 Generated Assets (${assets.length})</h2>
+          <div id="assets-list">
+            ${assets.length > 0 ? assets.map(renderAsset).join('') : '<p style="text-align: center; color: #999; padding: 40px;">No assets generated yet</p>'}
+          </div>
+        </div>
+
+        <div style="background: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+          <h3 style="margin: 0 0 15px 0; color: #333;">💡 Quick Actions</h3>
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
+            <button onclick="generateMore()" style="padding: 15px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; transition: transform 0.2s;" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='translateY(0)'">
+              ✨ Generate More
+            </button>
+            <button onclick="downloadAll()" style="padding: 15px; background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; transition: transform 0.2s;" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='translateY(0)'">
+              📥 Download All
+            </button>
+            <button onclick="shareAssets()" style="padding: 15px; background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; transition: transform 0.2s;" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='translateY(0)'">
+              🔗 Share
+            </button>
+          </div>
+        </div>
+
+        <div id="notification" style="position: fixed; top: 20px; right: 20px; padding: 15px 20px; background: #28a745; color: white; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); display: none; animation: slideIn 0.3s ease;">
+        </div>
+      </div>
+    `;
+  };
+
+  // Action handlers
+  const downloadAsset = (assetId) => {
+    showNotification(`📥 Downloading asset: ${assetId}`);
+    console.log('Download asset:', assetId);
+  };
+
+  const generateMore = () => {
+    showNotification('✨ Generating more assets...');
+    console.log('Generate more assets');
+  };
+
+  const downloadAll = () => {
+    showNotification('📥 Downloading all assets...');
+    console.log('Download all assets');
+  };
+
+  const shareAssets = () => {
+    showNotification('🔗 Sharing assets...');
+    console.log('Share assets');
+  };
+
+  const showNotification = (message) => {
+    const notification = document.getElementById('notification');
+    if (notification) {
+      notification.textContent = message;
+      notification.style.display = 'block';
+      setTimeout(() => {
+        notification.style.display = 'none';
+      }, 3000);
+    }
+  };
+
+  /**
+   * Handle data from the tool's output
+   */
+  const handleSetGlobal = (event) => {
+    const toolOutput = event.detail.globals["toolOutput"];
+    if (toolOutput) {
+      renderApp(toolOutput);
+    }
+  };
+
+  window.addEventListener("openai:set_globals", handleSetGlobal, {
+    passive: true,
+  });
+
+  // Default demo data for testing
+  window.addEventListener("DOMContentLoaded", () => {
+    setTimeout(() => {
+      const root = document.getElementById("root");
+      if (!root.innerHTML) {
+        const defaultData = {
+          message: "Figma assets created successfully",
+          assets: [
+            {
+              id: "asset_001",
+              name: "Social Media Post",
+              type: "Instagram Post (1080x1080)",
+              description: "Eye-catching social media post with modern gradient design",
+              icon: "📱",
+              preview: "https://images.unsplash.com/photo-1611162617474-5b21e879e113?w=400&h=400&fit=crop",
+              tags: ["Social Media", "Instagram", "Marketing"]
+            },
+            {
+              id: "asset_002",
+              name: "Banner Ad",
+              type: "Web Banner (728x90)",
+              description: "Professional banner ad for website campaigns",
+              icon: "🎯",
+              preview: "https://images.unsplash.com/photo-1557838923-2985c318be48?w=728&h=200&fit=crop",
+              tags: ["Banner", "Advertising", "Web"]
+            },
+            {
+              id: "asset_003",
+              name: "Business Card",
+              type: "Print Ready (3.5x2 in)",
+              description: "Modern business card design with clean layout",
+              icon: "💼",
+              preview: "https://images.unsplash.com/photo-1589829545856-d10d557cf95f?w=400&h=250&fit=crop",
+              tags: ["Print", "Business", "Professional"]
+            }
+          ]
+        };
+        renderApp(defaultData);
+      }
+    }, 100);
+  });
+</script>
+
+<style>
+  @keyframes slideIn {
+    from {
+      transform: translateX(400px);
+      opacity: 0;
+    }
+    to {
+      transform: translateX(0);
+      opacity: 1;
+    }
+  }
+</style>
+

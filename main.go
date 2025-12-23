@@ -65,10 +65,12 @@ func main() {
 					"add - Adds two numbers together",
 					"get_time - Returns the current server time",
 					"list_products - Display an interactive product selection widget",
+					"generate_asset - Generate marketing and creative assets (Figma-style)",
 				},
 				"resources": []string{
 					"server://info - Server information",
 					"widget://list-products - Product selection widget",
+					"ui://widget/generate_asset.html - Asset generation widget (Figma-style)",
 				},
 				"usage": "Send POST requests with JSON-RPC 2.0 format to /mcp endpoint",
 			}
@@ -239,6 +241,95 @@ func registerTools(s *server.MCPServer) {
 
 		return mcp.NewToolResultText(message), nil
 	})
+
+	// Asset generation tool (similar to Figma in ChatGPT)
+	generateAssetTool := mcp.NewTool("generate_asset",
+		mcp.WithDescription("Generates marketing and creative assets in Figma Buzz, including but not limited to social media posts, banners, digital ads, posters, hiring materials, event materials, one-pagers, or flyers, greeting cards, invitations, resumes"),
+		mcp.WithString("asset_type",
+			mcp.Required(),
+			mcp.Description("Type of asset to generate (e.g., 'social_media_post', 'banner', 'business_card', 'flyer')"),
+		),
+		mcp.WithString("description",
+			mcp.Description("Description of the asset requirements"),
+		),
+	)
+
+	s.AddTool(generateAssetTool, func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+		args, ok := request.Params.Arguments.(map[string]interface{})
+		if !ok {
+			return mcp.NewToolResultError("invalid arguments"), nil
+		}
+
+		assetType, ok := args["asset_type"].(string)
+		if !ok || assetType == "" {
+			return mcp.NewToolResultError("asset_type is required"), nil
+		}
+
+		description := ""
+		if desc, ok := args["description"].(string); ok {
+			description = desc
+		}
+
+		// Generate sample assets based on type
+		assets := []map[string]interface{}{
+			{
+				"id":          "asset_001",
+				"name":        "Social Media Post",
+				"type":        "Instagram Post (1080x1080)",
+				"description": "Eye-catching social media post with modern gradient design",
+				"icon":        "📱",
+				"preview":     "https://images.unsplash.com/photo-1611162617474-5b21e879e113?w=400&h=400&fit=crop",
+				"tags":        []string{"Social Media", "Instagram", "Marketing"},
+			},
+			{
+				"id":          "asset_002",
+				"name":        "Banner Ad",
+				"type":        "Web Banner (728x90)",
+				"description": "Professional banner ad for website campaigns",
+				"icon":        "🎯",
+				"preview":     "https://images.unsplash.com/photo-1557838923-2985c318be48?w=728&h=200&fit=crop",
+				"tags":        []string{"Banner", "Advertising", "Web"},
+			},
+			{
+				"id":          "asset_003",
+				"name":        "Business Card",
+				"type":        "Print Ready (3.5x2 in)",
+				"description": "Modern business card design with clean layout",
+				"icon":        "💼",
+				"preview":     "https://images.unsplash.com/photo-1589829545856-d10d557cf95f?w=400&h=250&fit=crop",
+				"tags":        []string{"Print", "Business", "Professional"},
+			},
+		}
+
+		// Create response data
+		responseData := map[string]interface{}{
+			"message": fmt.Sprintf("Figma assets created for: %s", assetType),
+			"assets":  assets,
+		}
+
+		if description != "" {
+			responseData["description"] = description
+		}
+
+		assetsJSON, err := json.Marshal(responseData)
+		if err != nil {
+			return mcp.NewToolResultError(fmt.Sprintf("failed to marshal assets: %v", err)), nil
+		}
+
+		message := fmt.Sprintf("✅ Figma assets created successfully!\n\n")
+		message += fmt.Sprintf("Asset Type: %s\n", assetType)
+		if description != "" {
+			message += fmt.Sprintf("Description: %s\n", description)
+		}
+		message += fmt.Sprintf("\nGenerated %d assets:\n", len(assets))
+		for _, asset := range assets {
+			message += fmt.Sprintf("- %s (%s)\n", asset["name"], asset["type"])
+		}
+		message += fmt.Sprintf("\nWidget data: %s\n", string(assetsJSON))
+		message += fmt.Sprintf("Widget resource: ui://widget/generate_asset.html")
+
+		return mcp.NewToolResultText(message), nil
+	})
 }
 
 func registerResources(s *server.MCPServer) {
@@ -278,6 +369,39 @@ func registerResources(s *server.MCPServer) {
 		htmlContent, err := os.ReadFile("ui/list-products.html")
 		if err != nil {
 			return nil, fmt.Errorf("failed to read widget HTML: %v", err)
+		}
+
+		// Create metadata for CSP (Content Security Policy) to allow image loading
+		metadata := map[string]interface{}{
+			"openai/widgetCSP": map[string]interface{}{
+				"connect_domains":  []string{"https://images.unsplash.com"},
+				"resource_domains": []string{"https://images.unsplash.com"},
+			},
+		}
+
+		return []mcp.ResourceContents{
+			mcp.TextResourceContents{
+				URI:      request.Params.URI,
+				MIMEType: "text/html+skybridge",
+				Text:     string(htmlContent),
+				Meta:     metadata,
+			},
+		}, nil
+	})
+
+	// Asset generation widget resource
+	assetWidgetResource := mcp.Resource{
+		URI:         "ui://widget/generate_asset.html",
+		Name:        "Asset Generation Widget",
+		Description: "Interactive HTML widget for displaying generated assets (Figma-style)",
+		MIMEType:    "text/html+skybridge",
+	}
+
+	s.AddResource(assetWidgetResource, func(ctx context.Context, request mcp.ReadResourceRequest) ([]mcp.ResourceContents, error) {
+		// Read the HTML widget file
+		htmlContent, err := os.ReadFile("ui/generate_asset.html")
+		if err != nil {
+			return nil, fmt.Errorf("failed to read asset widget HTML: %v", err)
 		}
 
 		// Create metadata for CSP (Content Security Policy) to allow image loading
