@@ -191,19 +191,43 @@ func registerTools(s *server.MCPServer) {
 	)
 
 	s.AddTool(listProductsTool, func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-		// Product data
-		products := []map[string]string{
-			{"name": "Premium Widget", "price": "$99.99", "desc": "Our flagship product with advanced features and premium support"},
-			{"name": "Standard Package", "price": "$49.99", "desc": "Perfect for small teams with essential features included"},
-			{"name": "Basic Starter", "price": "$29.99", "desc": "Get started with our basic plan, ideal for individuals"},
-			{"name": "Enterprise Solution", "price": "$199.99", "desc": "Complete enterprise solution with dedicated support"},
+		// Product data (structured for the widget)
+		products := []map[string]interface{}{
+			{
+				"name":        "Premium Widget",
+				"price":       "99.99",
+				"priceId":     "price_premium_widget",
+				"description": "Our flagship product with advanced features and premium support",
+				"image":       "https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?w=150&h=150&fit=crop",
+			},
+			{
+				"name":        "Standard Package",
+				"price":       "49.99",
+				"priceId":     "price_standard_package",
+				"description": "Perfect for small teams with essential features included",
+				"image":       "https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=150&h=150&fit=crop",
+			},
+			{
+				"name":        "Basic Starter",
+				"price":       "29.99",
+				"priceId":     "price_basic_starter",
+				"description": "Get started with our basic plan, ideal for individuals",
+				"image":       "https://images.unsplash.com/photo-1484480974693-6ca0a78fb36b?w=150&h=150&fit=crop",
+			},
+			{
+				"name":        "Enterprise Solution",
+				"price":       "199.99",
+				"priceId":     "price_enterprise_solution",
+				"description": "Complete enterprise solution with dedicated support and custom features",
+				"image":       "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=150&h=150&fit=crop",
+			},
 		}
 
 		// Build rich text response (works in Cursor and all clients)
 		textResponse := "🛍️ **Available Products**\n\n"
 		for i, p := range products {
-			textResponse += fmt.Sprintf("**%d. %s** - %s\n", i+1, p["name"], p["price"])
-			textResponse += fmt.Sprintf("   %s\n\n", p["desc"])
+			textResponse += fmt.Sprintf("**%d. %s** - $%s\n", i+1, p["name"], p["price"])
+			textResponse += fmt.Sprintf("   %s\n\n", p["description"])
 		}
 		textResponse += "---\n💡 *Select a product to proceed with your order.*"
 
@@ -230,7 +254,12 @@ func registerTools(s *server.MCPServer) {
 			Meta:     metadata,
 		}
 
-		// Return result with both text (for Cursor) and embedded resource (for ChatGPT)
+		// Structured content for the widget (ChatGPT passes this to the HTML)
+		structuredContent := map[string]interface{}{
+			"products": products,
+		}
+
+		// Return result with text, embedded resource, AND structuredContent
 		return &mcp.CallToolResult{
 			Content: []mcp.Content{
 				mcp.TextContent{
@@ -239,6 +268,7 @@ func registerTools(s *server.MCPServer) {
 				},
 				mcp.NewEmbeddedResource(resource),
 			},
+			StructuredContent: structuredContent,
 		}, nil
 	})
 
@@ -270,11 +300,35 @@ func registerTools(s *server.MCPServer) {
 			description = desc
 		}
 
-		// Asset templates based on type
-		assets := []map[string]string{
-			{"name": "Social Media Post", "type": "Instagram Post (1080x1080)", "icon": "📱"},
-			{"name": "Banner Ad", "type": "Web Banner (728x90)", "icon": "🎯"},
-			{"name": "Business Card", "type": "Print Ready (3.5x2 in)", "icon": "💼"},
+		// Asset data (structured for the widget)
+		assets := []map[string]interface{}{
+			{
+				"id":          "asset_001",
+				"name":        "Social Media Post",
+				"type":        "Instagram Post (1080x1080)",
+				"description": "Eye-catching social media post with modern gradient design",
+				"icon":        "📱",
+				"preview":     "https://images.unsplash.com/photo-1611162617474-5b21e879e113?w=400&h=400&fit=crop",
+				"tags":        []string{"Social Media", "Instagram", "Marketing"},
+			},
+			{
+				"id":          "asset_002",
+				"name":        "Banner Ad",
+				"type":        "Web Banner (728x90)",
+				"description": "Professional banner ad for website campaigns",
+				"icon":        "🎯",
+				"preview":     "https://images.unsplash.com/photo-1557838923-2985c318be48?w=728&h=200&fit=crop",
+				"tags":        []string{"Banner", "Advertising", "Web"},
+			},
+			{
+				"id":          "asset_003",
+				"name":        "Business Card",
+				"type":        "Print Ready (3.5x2 in)",
+				"description": "Modern business card design with clean layout",
+				"icon":        "💼",
+				"preview":     "https://images.unsplash.com/photo-1589829545856-d10d557cf95f?w=400&h=250&fit=crop",
+				"tags":        []string{"Print", "Business", "Professional"},
+			},
 		}
 
 		// Build rich text response (works in Cursor and all clients)
@@ -305,6 +359,14 @@ func registerTools(s *server.MCPServer) {
 			},
 		}
 
+		// Structured content for the widget (ChatGPT passes this to the HTML)
+		structuredContent := map[string]interface{}{
+			"message":     fmt.Sprintf("Figma assets created for: %s", assetType),
+			"asset_type":  assetType,
+			"description": description,
+			"assets":      assets,
+		}
+
 		// Create embedded resource with the HTML widget
 		resource := mcp.TextResourceContents{
 			URI:      "ui://widget/generate_asset.html",
@@ -313,7 +375,7 @@ func registerTools(s *server.MCPServer) {
 			Meta:     metadata,
 		}
 
-		// Return result with both text (for Cursor) and embedded resource (for ChatGPT)
+		// Return result with text, embedded resource, AND structuredContent
 		return &mcp.CallToolResult{
 			Content: []mcp.Content{
 				mcp.TextContent{
@@ -322,6 +384,7 @@ func registerTools(s *server.MCPServer) {
 				},
 				mcp.NewEmbeddedResource(resource),
 			},
+			StructuredContent: structuredContent,
 		}, nil
 	})
 }
