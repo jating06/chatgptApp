@@ -191,10 +191,27 @@ func registerTools(s *server.MCPServer) {
 	)
 
 	s.AddTool(listProductsTool, func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-		// Read the HTML widget file
+		// Product data
+		products := []map[string]string{
+			{"name": "Premium Widget", "price": "$99.99", "desc": "Our flagship product with advanced features and premium support"},
+			{"name": "Standard Package", "price": "$49.99", "desc": "Perfect for small teams with essential features included"},
+			{"name": "Basic Starter", "price": "$29.99", "desc": "Get started with our basic plan, ideal for individuals"},
+			{"name": "Enterprise Solution", "price": "$199.99", "desc": "Complete enterprise solution with dedicated support"},
+		}
+
+		// Build rich text response (works in Cursor and all clients)
+		textResponse := "🛍️ **Available Products**\n\n"
+		for i, p := range products {
+			textResponse += fmt.Sprintf("**%d. %s** - %s\n", i+1, p["name"], p["price"])
+			textResponse += fmt.Sprintf("   %s\n\n", p["desc"])
+		}
+		textResponse += "---\n💡 *Select a product to proceed with your order.*"
+
+		// Read the HTML widget file for ChatGPT
 		htmlContent, err := os.ReadFile("ui/list-products.html")
 		if err != nil {
-			return mcp.NewToolResultError(fmt.Sprintf("failed to read widget HTML: %v", err)), nil
+			// If HTML file not found, just return text
+			return mcp.NewToolResultText(textResponse), nil
 		}
 
 		// Create metadata for CSP
@@ -213,12 +230,12 @@ func registerTools(s *server.MCPServer) {
 			Meta:     metadata,
 		}
 
-		// Return result with embedded resource
+		// Return result with both text (for Cursor) and embedded resource (for ChatGPT)
 		return &mcp.CallToolResult{
 			Content: []mcp.Content{
 				mcp.TextContent{
 					Type: "text",
-					Text: "Here are the available products:",
+					Text: textResponse,
 				},
 				mcp.NewEmbeddedResource(resource),
 			},
@@ -253,10 +270,31 @@ func registerTools(s *server.MCPServer) {
 			description = desc
 		}
 
-		// Read the HTML widget file
+		// Asset templates based on type
+		assets := []map[string]string{
+			{"name": "Social Media Post", "type": "Instagram Post (1080x1080)", "icon": "📱"},
+			{"name": "Banner Ad", "type": "Web Banner (728x90)", "icon": "🎯"},
+			{"name": "Business Card", "type": "Print Ready (3.5x2 in)", "icon": "💼"},
+		}
+
+		// Build rich text response (works in Cursor and all clients)
+		textResponse := fmt.Sprintf("🎨 **Asset Generation Complete**\n\n")
+		textResponse += fmt.Sprintf("**Type:** %s\n", assetType)
+		if description != "" {
+			textResponse += fmt.Sprintf("**Description:** %s\n", description)
+		}
+		textResponse += "\n**Generated Assets:**\n\n"
+		for i, a := range assets {
+			textResponse += fmt.Sprintf("%s **%d. %s**\n", a["icon"], i+1, a["name"])
+			textResponse += fmt.Sprintf("   Format: %s\n\n", a["type"])
+		}
+		textResponse += "---\n✅ *Assets are ready for download and editing.*"
+
+		// Read the HTML widget file for ChatGPT
 		htmlContent, err := os.ReadFile("ui/generate_asset.html")
 		if err != nil {
-			return mcp.NewToolResultError(fmt.Sprintf("failed to read asset widget HTML: %v", err)), nil
+			// If HTML file not found, just return text
+			return mcp.NewToolResultText(textResponse), nil
 		}
 
 		// Create metadata for CSP
@@ -275,18 +313,12 @@ func registerTools(s *server.MCPServer) {
 			Meta:     metadata,
 		}
 
-		// Build response message
-		message := fmt.Sprintf("✅ Generated %s assets", assetType)
-		if description != "" {
-			message += fmt.Sprintf(" - %s", description)
-		}
-
-		// Return result with embedded resource
+		// Return result with both text (for Cursor) and embedded resource (for ChatGPT)
 		return &mcp.CallToolResult{
 			Content: []mcp.Content{
 				mcp.TextContent{
 					Type: "text",
-					Text: message,
+					Text: textResponse,
 				},
 				mcp.NewEmbeddedResource(resource),
 			},
