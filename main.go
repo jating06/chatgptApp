@@ -18,8 +18,15 @@ import (
 const (
 	serverName    = "example-mcp-server"
 	serverVersion = "1.0.0"
-	serverPort    = "8080"
 )
+
+func getServerPort() string {
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8080"
+	}
+	return port
+}
 
 func main() {
 	// Create a new MCP server
@@ -87,6 +94,7 @@ func main() {
 		w.Write([]byte("OK"))
 	})
 
+	serverPort := getServerPort()
 	httpServer := &http.Server{
 		Addr:         ":" + serverPort,
 		Handler:      mux,
