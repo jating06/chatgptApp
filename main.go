@@ -191,55 +191,38 @@ func registerTools(s *server.MCPServer) {
 	)
 
 	s.AddTool(listProductsTool, func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-		// Sample product data with real stock images and descriptions
-		products := []map[string]interface{}{
-			{
-				"name":        "Premium Widget",
-				"price":       "99.99",
-				"priceId":     "price_premium_widget",
-				"description": "Our flagship product with advanced features and premium support",
-				"image":       "https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?w=150&h=150&fit=crop",
-			},
-			{
-				"name":        "Standard Package",
-				"price":       "49.99",
-				"priceId":     "price_standard_package",
-				"description": "Perfect for small teams with essential features included",
-				"image":       "https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=150&h=150&fit=crop",
-			},
-			{
-				"name":        "Basic Starter",
-				"price":       "29.99",
-				"priceId":     "price_basic_starter",
-				"description": "Get started with our basic plan, ideal for individuals",
-				"image":       "https://images.unsplash.com/photo-1484480974693-6ca0a78fb36b?w=150&h=150&fit=crop",
-			},
-			{
-				"name":        "Enterprise Solution",
-				"price":       "199.99",
-				"priceId":     "price_enterprise_solution",
-				"description": "Complete enterprise solution with dedicated support and custom features",
-				"image":       "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=150&h=150&fit=crop",
-			},
-		}
-
-		// Create structured content with products data
-		productsJSON, err := json.Marshal(map[string]interface{}{
-			"products": products,
-		})
+		// Read the HTML widget file
+		htmlContent, err := os.ReadFile("ui/list-products.html")
 		if err != nil {
-			return mcp.NewToolResultError(fmt.Sprintf("failed to marshal products: %v", err)), nil
+			return mcp.NewToolResultError(fmt.Sprintf("failed to read widget HTML: %v", err)), nil
 		}
 
-		// Return result with reference to the widget resource
-		message := fmt.Sprintf("Product selection widget loaded.\n\nAvailable products:\n")
-		for _, p := range products {
-			message += fmt.Sprintf("- %s: $%s\n", p["name"], p["price"])
+		// Create metadata for CSP
+		metadata := map[string]interface{}{
+			"openai/widgetCSP": map[string]interface{}{
+				"connect_domains":  []string{"https://images.unsplash.com"},
+				"resource_domains": []string{"https://images.unsplash.com"},
+			},
 		}
-		message += fmt.Sprintf("\nWidget data: %s\n", string(productsJSON))
-		message += fmt.Sprintf("Widget resource: widget://list-products")
 
-		return mcp.NewToolResultText(message), nil
+		// Create embedded resource with the HTML widget
+		resource := mcp.TextResourceContents{
+			URI:      "widget://list-products",
+			MIMEType: "text/html+skybridge",
+			Text:     string(htmlContent),
+			Meta:     metadata,
+		}
+
+		// Return result with embedded resource
+		return &mcp.CallToolResult{
+			Content: []mcp.Content{
+				mcp.TextContent{
+					Type: "text",
+					Text: "Here are the available products:",
+				},
+				mcp.NewEmbeddedResource(resource),
+			},
+		}, nil
 	})
 
 	// Asset generation tool (similar to Figma in ChatGPT)
@@ -270,65 +253,44 @@ func registerTools(s *server.MCPServer) {
 			description = desc
 		}
 
-		// Generate sample assets based on type
-		assets := []map[string]interface{}{
-			{
-				"id":          "asset_001",
-				"name":        "Social Media Post",
-				"type":        "Instagram Post (1080x1080)",
-				"description": "Eye-catching social media post with modern gradient design",
-				"icon":        "📱",
-				"preview":     "https://images.unsplash.com/photo-1611162617474-5b21e879e113?w=400&h=400&fit=crop",
-				"tags":        []string{"Social Media", "Instagram", "Marketing"},
-			},
-			{
-				"id":          "asset_002",
-				"name":        "Banner Ad",
-				"type":        "Web Banner (728x90)",
-				"description": "Professional banner ad for website campaigns",
-				"icon":        "🎯",
-				"preview":     "https://images.unsplash.com/photo-1557838923-2985c318be48?w=728&h=200&fit=crop",
-				"tags":        []string{"Banner", "Advertising", "Web"},
-			},
-			{
-				"id":          "asset_003",
-				"name":        "Business Card",
-				"type":        "Print Ready (3.5x2 in)",
-				"description": "Modern business card design with clean layout",
-				"icon":        "💼",
-				"preview":     "https://images.unsplash.com/photo-1589829545856-d10d557cf95f?w=400&h=250&fit=crop",
-				"tags":        []string{"Print", "Business", "Professional"},
-			},
-		}
-
-		// Create response data
-		responseData := map[string]interface{}{
-			"message": fmt.Sprintf("Figma assets created for: %s", assetType),
-			"assets":  assets,
-		}
-
-		if description != "" {
-			responseData["description"] = description
-		}
-
-		assetsJSON, err := json.Marshal(responseData)
+		// Read the HTML widget file
+		htmlContent, err := os.ReadFile("ui/generate_asset.html")
 		if err != nil {
-			return mcp.NewToolResultError(fmt.Sprintf("failed to marshal assets: %v", err)), nil
+			return mcp.NewToolResultError(fmt.Sprintf("failed to read asset widget HTML: %v", err)), nil
 		}
 
-		message := fmt.Sprintf("✅ Figma assets created successfully!\n\n")
-		message += fmt.Sprintf("Asset Type: %s\n", assetType)
+		// Create metadata for CSP
+		metadata := map[string]interface{}{
+			"openai/widgetCSP": map[string]interface{}{
+				"connect_domains":  []string{"https://images.unsplash.com"},
+				"resource_domains": []string{"https://images.unsplash.com"},
+			},
+		}
+
+		// Create embedded resource with the HTML widget
+		resource := mcp.TextResourceContents{
+			URI:      "ui://widget/generate_asset.html",
+			MIMEType: "text/html+skybridge",
+			Text:     string(htmlContent),
+			Meta:     metadata,
+		}
+
+		// Build response message
+		message := fmt.Sprintf("✅ Generated %s assets", assetType)
 		if description != "" {
-			message += fmt.Sprintf("Description: %s\n", description)
+			message += fmt.Sprintf(" - %s", description)
 		}
-		message += fmt.Sprintf("\nGenerated %d assets:\n", len(assets))
-		for _, asset := range assets {
-			message += fmt.Sprintf("- %s (%s)\n", asset["name"], asset["type"])
-		}
-		message += fmt.Sprintf("\nWidget data: %s\n", string(assetsJSON))
-		message += fmt.Sprintf("Widget resource: ui://widget/generate_asset.html")
 
-		return mcp.NewToolResultText(message), nil
+		// Return result with embedded resource
+		return &mcp.CallToolResult{
+			Content: []mcp.Content{
+				mcp.TextContent{
+					Type: "text",
+					Text: message,
+				},
+				mcp.NewEmbeddedResource(resource),
+			},
+		}, nil
 	})
 }
 
