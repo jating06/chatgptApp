@@ -44,7 +44,5 @@ logs/
 # Temporary files
 *.tmp
 
-# Cloned examples repository
-openai-apps-sdk-examples/
 
 

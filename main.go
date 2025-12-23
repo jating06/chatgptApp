@@ -137,6 +137,9 @@ func registerTools(s *server.MCPServer) {
 			mcp.Required(),
 			mcp.Description("The message to echo back"),
 		),
+		mcp.WithReadOnlyHintAnnotation(true),
+		mcp.WithDestructiveHintAnnotation(false),
+		mcp.WithOpenWorldHintAnnotation(false),
 	)
 
 	s.AddTool(echoTool, func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
@@ -164,6 +167,9 @@ func registerTools(s *server.MCPServer) {
 			mcp.Required(),
 			mcp.Description("Second number"),
 		),
+		mcp.WithReadOnlyHintAnnotation(true),
+		mcp.WithDestructiveHintAnnotation(false),
+		mcp.WithOpenWorldHintAnnotation(false),
 	)
 
 	s.AddTool(addTool, func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
@@ -186,6 +192,9 @@ func registerTools(s *server.MCPServer) {
 	// Example tool: Get current time
 	timeTool := mcp.NewTool("get_time",
 		mcp.WithDescription("Returns the current server time"),
+		mcp.WithReadOnlyHintAnnotation(true),
+		mcp.WithDestructiveHintAnnotation(false),
+		mcp.WithOpenWorldHintAnnotation(false),
 	)
 
 	s.AddTool(timeTool, func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
@@ -196,6 +205,9 @@ func registerTools(s *server.MCPServer) {
 	// Product listing tool with HTML widget
 	listProductsTool := mcp.NewTool("list_products",
 		mcp.WithDescription("Display an interactive product selection widget"),
+		mcp.WithReadOnlyHintAnnotation(true),
+		mcp.WithDestructiveHintAnnotation(false),
+		mcp.WithOpenWorldHintAnnotation(false),
 	)
 
 	s.AddTool(listProductsTool, func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
@@ -256,6 +268,9 @@ func registerTools(s *server.MCPServer) {
 		mcp.WithString("pizzaTopping",
 			mcp.Description("Topping to mention when rendering the widget (e.g., pepperoni, mushrooms, cheese)"),
 		),
+		mcp.WithReadOnlyHintAnnotation(true),
+		mcp.WithDestructiveHintAnnotation(false),
+		mcp.WithOpenWorldHintAnnotation(false),
 	)
 
 	s.AddTool(pizzaListTool, func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
